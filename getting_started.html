@@ -1,0 +1,187 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting Started &mdash; JSONRPC 1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="JSONRPC 1.0 documentation" href="index.html" />
+    <link rel="next" title="JSON-RPC Server" href="server.html" />
+    <link rel="prev" title="Welcome to JSONRPC’s documentation!" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="server.html" title="JSON-RPC Server"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to JSONRPC’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">JSONRPC 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<p>This code will create a server that logs all requests, and provides two methods to clients:
+add and subtract:</p>
+<div class="highlight-python"><pre>#
+#  Copyright (c) 2011 Edward Langley
+
+from twisted.internet import reactor, ssl
+from twisted.web import server
+import traceback
+
+from jsonrpc.server import ServerEvents, JSON_RPC
+
+class ExampleServer(ServerEvents):
+  # inherited hooks
+  def log(self, responses, txrequest, error):
+    print(txrequest.code, end=' ')
+    if isinstance(responses, list):
+      for response in responses:
+        msg = self._get_msg(response)
+        print(txrequest, msg)
+    else:
+      msg = self._get_msg(responses)
+      print(txrequest, msg)
+
+  def findmethod(self, method):
+    if method in self.methods:
+      return getattr(self, method)
+    else:
+      return None
+
+  # helper methods
+  methods = set(['add', 'subtract'])
+  def _get_msg(self, response):
+    print('response', repr(response))
+    return ' '.join(str(x) for x in [response.id, response.result or response.error])
+
+  def subtract(self, a, b):
+    return a-b
+
+  def add(self, a, b):
+    return a+b
+
+root = JSON_RPC().customize(ExampleServer)
+site = server.Site(root)
+
+
+# 8007 is the port you want to run under. Choose something &gt;1024
+PORT = 8007
+print('Listening on port %d...' % PORT)
+reactor.listenTCP(PORT, site)
+reactor.run()
+</pre>
+</div>
+<p>To use this server (which is included as jsonrpc.example_server), start it and the client in this way:</p>
+<div class="highlight-console"><div class="highlight"><pre><span class="gp">%</span> python -m jsonrpc.example_server &amp;
+
+<span class="gp">%</span> python -i -m jsonrpc.__main__ http://localhost:8007
+</pre></div>
+</div>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">server</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">3</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">server</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">server</span><span class="o">.</span><span class="n">batch_call</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span>
+<span class="gp">... </span>  <span class="n">add</span> <span class="o">=</span> <span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">{}</span> <span class="p">),</span>
+<span class="gp">... </span>  <span class="n">subtract</span> <span class="o">=</span> <span class="p">((),</span> <span class="p">{</span><span class="s">&#39;a&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&#39;b&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span>
+<span class="gp">... </span><span class="p">))</span>
+<span class="go">[(5, None), (1, None)]</span>
+</pre></div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to JSONRPC&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="server.html"
+                        title="next chapter">JSON-RPC Server</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/getting_started.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="server.html" title="JSON-RPC Server"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to JSONRPC’s documentation!"
+             >previous</a> |</li>
+        <li><a href="index.html">JSONRPC 1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Edward Langley.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.
+    </div>
+  </body>
+</html>

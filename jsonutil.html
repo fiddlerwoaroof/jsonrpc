@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Welcome to JSONRPC’s documentation! &mdash; JSONRPC 1.0 documentation</title>
+    <title>jsonrpc.jsonutil &mdash; JSONRPC 1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -25,8 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="JSONRPC 1.0 documentation" href="#" />
-    <link rel="next" title="Getting Started" href="getting_started.html" /> 
+    <link rel="top" title="JSONRPC 1.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -38,10 +37,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="getting_started.html" title="Getting Started"
-             accesskey="N">next</a> |</li>
-        <li><a href="#">JSONRPC 1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">JSONRPC 1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,25 +46,21 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="welcome-to-jsonrpc-s-documentation">
-<h1>Welcome to JSONRPC&#8217;s documentation!<a class="headerlink" href="#welcome-to-jsonrpc-s-documentation" title="Permalink to this headline">¶</a></h1>
-<p>Contents:</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
-<li class="toctree-l1"><a class="reference internal" href="server.html">JSON-RPC Server</a></li>
-<li class="toctree-l1"><a class="reference internal" href="proxy.html">JSON-RPC Proxy</a></li>
-<li class="toctree-l1"><a class="reference internal" href="jsonutil.html">jsonrpc.jsonutil</a></li>
-</ul>
-</div>
-</div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
-<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
-<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
-</ul>
+  <div class="section" id="module-jsonrpc.jsonutil">
+<span id="jsonrpc-jsonutil"></span><h1>jsonrpc.jsonutil<a class="headerlink" href="#module-jsonrpc.jsonutil" title="Permalink to this headline">¶</a></h1>
+<dl class="function">
+<dt id="jsonrpc.jsonutil.encode">
+<tt class="descclassname">jsonrpc.jsonutil.</tt><tt class="descname">encode</tt><big>(</big><em>obj</em>, <em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>cls=None</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#jsonrpc.jsonutil.encode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Serialize obj to json, if it is not of a type which the encoder can handle,
+make it the proper type. Args and kw are as in json.dumps</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="jsonrpc.jsonutil.decode">
+<tt class="descclassname">jsonrpc.jsonutil.</tt><tt class="descname">decode</tt><big>(</big><em>str</em>, <em>encoding=None</em>, <em>cls=None</em>, <em>object_hook=None</em>, <em>parse_float=None</em>, <em>parse_int=None</em>, <em>parse_constant=None</em>, <em>**kw</em><big>)</big><a class="headerlink" href="#jsonrpc.jsonutil.decode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an object from a json string.  This is just <a class="reference external" href="http://docs.python.org/2.7/library/json.html#json.loads" title="(in Python v2.7)"><tt class="xref py py-func docutils literal"><span class="pre">json.loads()</span></tt></a> renamed</p>
+</dd></dl>
+
 </div>
 
 
@@ -77,20 +69,9 @@
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Welcome to JSONRPC&#8217;s documentation!</a><ul>
-</ul>
-</li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
-
-  <h4>Next topic</h4>
-  <p class="topless"><a href="getting_started.html"
-                        title="next chapter">Getting Started</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="_sources/index.txt"
+    <li><a href="_sources/jsonutil.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -119,10 +100,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="right" >
-          <a href="getting_started.html" title="Getting Started"
-             >next</a> |</li>
-        <li><a href="#">JSONRPC 1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">JSONRPC 1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
