@@ -32,7 +32,7 @@
 #
 import functools
 from twisted.trial import unittest
-import StringIO
+import io
 
 import mock
 
@@ -98,7 +98,7 @@ class TestJSONRPCServer(unittest.TestCase):
 	@TestResource
 	def test_eventhandler(self, request, resource):
 		resource.eventhandler = mock.Mock(wraps=resource.eventhandler)
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
 		return request, resource
 
 	@test_eventhandler
@@ -112,7 +112,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_requestid0(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
 		return request, resource
 
 	@test_requestid0
@@ -125,7 +125,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_requestid1(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": 1}' % jsonrpc.jsonutil.encode([self.param]))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": 1}' % jsonrpc.jsonutil.encode([self.param]))
 		return request, resource
 
 	@test_requestid1
@@ -138,7 +138,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_requestid2(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": []}' % jsonrpc.jsonutil.encode([self.param]))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": []}' % jsonrpc.jsonutil.encode([self.param]))
 		return request, resource
 
 	@test_requestid2
@@ -150,7 +150,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_requestid3(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": {}}' % jsonrpc.jsonutil.encode([self.param]))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": {}}' % jsonrpc.jsonutil.encode([self.param]))
 		return request, resource
 
 	@test_requestid3
@@ -162,7 +162,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_invalid_data(self, request, resource):
-		request.content = StringIO.StringIO(' {"v": %s}, "method": "echo"}' % (jsonrpc.jsonutil.encode(self.param)))
+		request.content = io.StringIO(' {"v": %s}, "method": "echo"}' % (jsonrpc.jsonutil.encode(self.param)))
 		return request, resource
 
 	@test_invalid_data
@@ -175,7 +175,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_wrongversion(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.1", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
+		request.content = io.StringIO('{"jsonrpc": "2.1", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
 
 
 	@test_wrongversion
@@ -187,7 +187,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_invalidmethodname(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": 0, "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": 0, "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
 
 
 	@test_invalidmethodname
@@ -198,7 +198,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_missingmethod(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "non_existent", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "non_existent", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
 
 
 	@test_missingmethod
@@ -211,7 +211,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_simplecall(self):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode([self.param]), self.id_))
 
 	@test_simplecall
 	def rendered(ignored):
@@ -223,7 +223,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_notify(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": {"v": %s}, "method": "echo"}' % (jsonrpc.jsonutil.encode(self.param)))
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": {"v": %s}, "method": "echo"}' % (jsonrpc.jsonutil.encode(self.param)))
 
 	@test_notify
 	def test_notify(ignored, self, request, resource):
@@ -232,7 +232,9 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def _test_kwcall(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": {"v": %s}, "method": "echo", "id": "%s"}' % (jsonrpc.jsonutil.encode(self.param), self.id_))
+		data = '{"jsonrpc": "2.0", "params": {"v": %s}, "method": "echo", "id": "%s"}' % (
+				jsonrpc.jsonutil.encode(self.param), self.id_)
+		request.content = io.StringIO(data)
 
 	@_test_kwcall
 	def test_kwcall_id(ignored, self, request, resource):
@@ -249,7 +251,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def test_err(self, request, resource):
-		request.content = StringIO.StringIO('{"jsonrpc": "2.0", "params": [1, "sss"], "method": "add", "id": "%s"}' % self.id_)
+		request.content = io.StringIO('{"jsonrpc": "2.0", "params": [1, "sss"], "method": "add", "id": "%s"}' % self.id_)
 		return request, resource
 
 	@test_err
@@ -262,7 +264,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def _test_batchcall(self, request, resource):
-		request.content = StringIO.StringIO(
+		request.content = io.StringIO(
 			'[{"jsonrpc": "2.0", "params": [1, 2], "method": "add", "id": "1"},'
 				'{"jsonrpc": "2.0", "params": {"a": 3, "b": 2}, "method": "add", "id": "2"}]'
 		)
@@ -294,7 +296,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
 	@TestResource
 	def _test_batchcall_1err(self, request, resource):
-		request.content = StringIO.StringIO(
+		request.content = io.StringIO(
 			'[{"jsonrpc": "2.0", "params": [1, 2], "method": "add", "id": "1"},'
 				'{"jsonrpc": "2.0", "params": {"a": "3", "b": 2}, "method": "add", "id": "2"}]'
 		)
@@ -322,12 +324,12 @@ class TestJSONRPCServer(unittest.TestCase):
 	@_test_batchcall_1err
 	def test_batchcall_1err_5(ignored, self, request, resource):
 		data = jsonrpc.jsonutil.decode(request.written[0])
-		self.assertEqual(len(filter(None, [x.get('error') for x in data])), 1)
+		self.assertEqual(len([_f for _f in [x.get('error') for x in data] if _f]), 1)
 
 
 	@TestResource
 	def _test_batchcall_emptylist(self, request, resource):
-		request.content = StringIO.StringIO('[]')
+		request.content = io.StringIO('[]')
 
 	@_test_batchcall_emptylist
 	def test_batchcall_emptylist(ignored, self, request, resource):

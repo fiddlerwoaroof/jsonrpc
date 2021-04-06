@@ -2,8 +2,8 @@ import jsonrpc.common
 import jsonrpc.proxy
 from twisted.trial import unittest
 import mock
-import urllib
-import StringIO
+import urllib.request, urllib.parse, urllib.error
+import io
 
 # Run example server before tests
 

@@ -97,7 +97,7 @@ class JsonInstantiate:
 		return [cls.from_dict(r) for r in responses]
 
 
-class Request(object, JsonInstantiate):
+class Request(JsonInstantiate):
 	def __init__(self, id, method, args=None, kwargs=None, extra=None, version='2.0'):
 		self.version = version
 		self.id = id
@@ -122,22 +122,22 @@ class Request(object, JsonInstantiate):
 			args = kwargs.pop('__args', args)
 
 		args = args
-		kwargs = dict( (str(k), v) for k,v in kwargs.items() )
+		kwargs = dict( (str(k), v) for k,v in list(kwargs.items()) )
 		extra = content
 		return cls(id, method, args, kwargs, extra, version)
 
 
 	def check(self):
 		if self.version != '2.0': raise InvalidRequest
-		if not isinstance(self.method, (str, unicode)): raise InvalidRequest
-		if not isinstance(self.id, (str, unicode, int, type(None))):
+		if not isinstance(self.method, str): raise InvalidRequest
+		if not isinstance(self.id, (str, int, type(None))):
 			self.id = None
 			raise InvalidRequest
 
 
 	def json_equivalent(self):
-		if self.kwargs and self.kwargs.has_key('__args'):
-			raise ValueError, 'invalid argument name: __args'
+		if self.kwargs and '__args' in self.kwargs:
+			raise ValueError('invalid argument name: __args')
 
 		params = self.args
 		if self.args and self.kwargs:
@@ -154,7 +154,7 @@ class Request(object, JsonInstantiate):
 
 
 
-class Response(object, JsonInstantiate):
+class Response(JsonInstantiate):
 	def __init__(self, id=None, result=None, error=None, version='2.0'):
 		self.version = version
 		self.id = id

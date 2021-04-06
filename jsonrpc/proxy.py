@@ -31,15 +31,14 @@
 #
 #
 import copy
-import cookielib
-import urllib2
-import urlparse
+import http.cookiejar
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import itertools
 import traceback
 import random
 import time
-import UserDict, collections
-collections.Mapping.register(UserDict.DictMixin)
+import collections
 
 from hashlib import sha1
 import jsonrpc.jsonutil
@@ -63,9 +62,9 @@ class IDGen(object):
 		self._id = 0
 	def __get__(self, *_, **__):
 		self._id += 1
-		self._hasher.update(str(self._id))
-		self._hasher.update(time.ctime())
-		self._hasher.update(str(random.random))
+		self._hasher.update(str(self._id).encode('utf-8'))
+		self._hasher.update(time.ctime().encode('utf-8'))
+		self._hasher.update(str(random.random()).encode('utf-8'))
 		return self._hasher.hexdigest()
 
 
@@ -92,7 +91,7 @@ class ProxyEvents(object):
 		return data
 
 
-class JSONRPCProcessor(urllib2.BaseHandler):
+class JSONRPCProcessor(urllib.request.BaseHandler):
 	def __init__(self):
 		self.handler_order = 100
 
@@ -135,7 +134,7 @@ class JSONRPCProxy(object):
 	@classmethod
 	def from_url(cls, url, ctxid=None, serviceName=None):
 		'''Create a JSONRPCProxy from a URL'''
-		urlsp = urlparse.urlsplit(url)
+		urlsp = urllib.parse.urlsplit(url)
 		url = '{0}://{1}'.format(urlsp.scheme, urlsp.netloc)
 		path = urlsp.path
 		if urlsp.query: path = '{0}?{1}'.format(path, urlsp.query)
@@ -150,8 +149,8 @@ class JSONRPCProxy(object):
 		self.serviceURL, self._path = self._transformURL(host, path)
 		self.customize(self._eventhandler)
 
-		cj = cookielib.CookieJar()
-		self._opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cj))
+		cj = http.cookiejar.CookieJar()
+		self._opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cj))
 		self._opener.add_handler(JSONRPCProcessor())
 
 
@@ -185,6 +184,7 @@ class JSONRPCProxy(object):
 
 		url = self._get_url()
 		postdata = self._get_postdata(args, kwargs)
+		postdata = postdata.encode('utf-8')
 		#respdata = urllib2.urlopen(url, postdata).read()
 		respdata = self._post(url, postdata).read()
 		resp = Response.from_dict(jsonrpc.jsonutil.decode(respdata))
@@ -210,9 +210,9 @@ class JSONRPCProxy(object):
 		:returns: a list of pairs (result, error) where only one is not None
 		'''
 		result = None
-		if hasattr(methods, 'items'): methods = methods.items()
+		if hasattr(methods, 'items'): methods = list(methods.items())
 		data = [ getattr(self, k)._get_postdata(*v) for k, v in methods ]
-		postdata = '[{0}]'.format(','.join(data))
+		postdata = '[{0}]'.format(','.join(data)).encode('utf-8')
 		respdata = self._post(self._get_url(), postdata).read()
 		resp = Response.from_json(respdata)
 		try:

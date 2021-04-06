@@ -44,8 +44,7 @@ from twisted.web.resource import Resource
 import abc
 
 import copy
-import UserDict, collections
-collections.Mapping.register(UserDict.DictMixin)
+import collections
 
 @public
 class ServerEvents(object):
@@ -68,7 +67,7 @@ class ServerEvents(object):
 		extra.update(rpcrequest.kwargs)
 
 		method, postprocess_result = self.findmethod(rpcrequest.method, rpcrequest.args, extra), False
-		if hasattr('method', '__iter__'):
+		if hasattr(method, '__iter__') and not isinstance(method, str):
 			method, postprocess_result = method
 
 		if self.DEBUG:
@@ -179,8 +178,7 @@ class JSON_RPC(Resource):
 			try:
 				content = request.content.read()
 				content = jsonrpc.jsonutil.decode(content)
-			except ValueError, e:
-				print('>>>', e)
+			except ValueError as e:
 				self.eventhandler.log(None, request, True)
 				raise jsonrpc.common.ParseError
 
@@ -194,14 +192,14 @@ class JSON_RPC(Resource):
 				else:
 					for item in content: item.check()
 
-			except jsonrpc.common.RPCError, e:
+			except jsonrpc.common.RPCError as e:
 				self._ebRender(e, request, content.id if hasattr(content, 'id') else None)
 
 			else:
 				d = self._action(request, content)
 				d.addCallback(self._cbRender, request)
 				d.addErrback(self._ebRender, request, content.id if hasattr(content, 'id') else None)
-		except BaseException, e:
+		except BaseException as e:
 			self._ebRender(e, request, None)
 
 		return server.NOT_DONE_YET
@@ -243,13 +241,13 @@ class JSON_RPC(Resource):
 						rpcrequest = methodresult.rpcrequest
 						try:
 							methodresult.raiseException()
-						except Exception, e:
+						except Exception as e:
 							res = self.render_error(e, rpcrequest.id)
 							self.eventhandler.log(res, request, error=True)
 
 					if res.id is not None:
 						result.append(res)
-			except Exception, e:
+			except Exception as e:
 				traceback.print_exc()
 				raise
 
@@ -281,7 +279,7 @@ class JSON_RPC(Resource):
 			err = None
 			if not isinstance(result, BaseException):
 				try: result.raiseException()
-				except BaseException, e:
+				except BaseException as e:
 					err = e
 					self.eventhandler.log(err, request, error=True)
 			else: err = result

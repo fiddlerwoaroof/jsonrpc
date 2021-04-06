@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 #  
 #  Copyright (c) 2011 Edward Langley
 #  All rights reserved.
@@ -74,7 +74,7 @@ def encode_(obj, **kw):
 	func = lambda x: x
 	if hasattr(obj, 'items'):
 		func = dict_encode
-	elif hasattr(obj, '__iter__'):
+	elif hasattr(obj, '__iter__') and not isinstance(obj, str):
 		func = list_encode
 	else:
 		func = safe_encode

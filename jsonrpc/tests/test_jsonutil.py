@@ -61,7 +61,7 @@ class TestJSONUTIL(unittest.TestCase):
 
 		# extended functionality
 		self.obj3 = dict(a=set([1]),b=frozenset([2]),c=[1,2,3])
-		self.obj3_roundtrip = dict( (k,list(v)) for k,v in self.obj3.items())
+		self.obj3_roundtrip = dict( (k,list(v)) for k,v in list(self.obj3.items()))
 
 		self.obj4 = testobj()
 		self.jobj4 = json.dumps(testobj.value)
