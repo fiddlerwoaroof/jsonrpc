@@ -25,6 +25,7 @@ if __name__ == "__main__":
 		scripts=[],
 		license= 'BSD 2.0',
 		keywords = ['JSON', 'jsonrpc', 'rpc'],
+                install_requires = ['pyOpenSSL', 'service_identity', 'Twisted'],
 		classifiers = [
 			'Development Status :: 4 - Beta',
 			'Environment :: Web Environment',
