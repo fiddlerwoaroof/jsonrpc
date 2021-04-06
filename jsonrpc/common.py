@@ -32,7 +32,18 @@
 #
 from jsonrpc.utilities import public
 import jsonrpc.jsonutil
-from typing import Dict, Any, TypedDict, Any, Iterable, Optional, Union
+from typing import (
+    Dict,
+    Any,
+    List,
+    Type,
+    TypeVar,
+    TypedDict,
+    Any,
+    Iterable,
+    Optional,
+    Union,
+)
 
 
 class JSONError(TypedDict):
@@ -94,16 +105,20 @@ codemap = {0: RPCError}
 codemap.update((e.code, e) for e in RPCError.__subclasses__())
 
 
+T = TypeVar("T", bound="JsonInstantiate")
+
+
 class JsonInstantiate:
     @classmethod
     def from_dict(cls, inp: Dict[Any, Any]):
         pass
 
     @classmethod
-    def from_json(cls, json):
+    def from_json(cls: Type[T], json) -> Union[T, List[T]]:
         data = json
         if hasattr(json, "upper"):
             data = jsonrpc.jsonutil.decode(json)
+
         if isinstance(data, list):
             result = cls.from_list(data)
         else:

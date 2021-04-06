@@ -40,7 +40,7 @@ import jsonrpc.server
 import jsonrpc.jsonutil
 
 from twisted.web.test.test_web import DummyRequest
-from twisted.internet.defer import succeed, DeferredList
+from twisted.internet.defer import succeed
 from twisted.web.static import server
 
 
@@ -48,7 +48,7 @@ def _render(resource, request):
     result = resource.render(request)
     if isinstance(result, str):
         request.write(result)
-        equest.finish()
+        request.finish()
         return succeed(None)
     elif result is server.NOT_DONE_YET:
         if request.finished:
@@ -63,18 +63,45 @@ class SimpleEventHandler(jsonrpc.server.ServerEvents):
     def log(self, result, request, error=False):
         pass
 
-    def findmethod(self, method, *_, **__):
-        if method in set(["echo", "add"]):
-            return getattr(self, method)
+    # def findmethod(self, method, *_, **__):
+    #     if method in set(["echo", "add"]):
+    #         return getattr(self, method)
+    methods = {"add": lambda a, b: a + b, "echo": lambda v: v}
 
-    def add(self, a, b):
-        return a + b
+    # def add(self, a, b):
+    #     return a + b
 
-    def echo(self, v):
-        return v
+    # def echo(self, v):
+    #     return v
+
+
+class JSONRPC_Resource(jsonrpc.server.JSON_RPC):
+    eventhandler = SimpleEventHandler
 
 
 def TestResource(setup):
+    def _inner1(tests):
+        @functools.wraps(setup)
+        def _inner2(self):
+            resource = JSONRPC_Resource()
+            # resource.customize(SimpleEventHandler)
+
+            request = DummyRequest([""])
+            request.getCookie = mock.Mock()
+
+            result = setup(self, request, resource)
+            if result is not None:
+                request, resource = result
+
+            d = _render(resource, request).addCallback(tests, self, request, resource)
+            return d
+
+        return _inner2
+
+    return _inner1
+
+
+def TestResourceCustomize(setup):
     def _inner1(tests):
         @functools.wraps(setup)
         def _inner2(self):
@@ -103,7 +130,7 @@ class TestJSONRPCServer(unittest.TestCase):
 
     @TestResource
     def test_eventhandler(self, request, resource):
-        resource.eventhandler = mock.Mock(wraps=resource.eventhandler)
+        resource._eventhandler = mock.Mock(wraps=resource._eventhandler)
         request.content = io.StringIO(
             '{"jsonrpc": "2.0", "params": %s, "method": "echo", "id": "%s"}'
             % (jsonrpc.jsonutil.encode([self.param]), self.id_)
@@ -112,12 +139,12 @@ class TestJSONRPCServer(unittest.TestCase):
 
     @test_eventhandler
     def test_eventhandler(ignored, self, request, resource):
-        self.assertTrue(resource.eventhandler.processcontent.called)
-        self.assertTrue(resource.eventhandler.defer_with_rpcrequest.called)
-        self.assertTrue(resource.eventhandler.callmethod.called)
-        self.assertTrue(resource.eventhandler.defer.called)
-        self.assertTrue(resource.eventhandler.getresponsecode.called)
-        self.assertTrue(resource.eventhandler.log.called)
+        self.assertTrue(resource._eventhandler.processcontent.called)
+        self.assertTrue(resource._eventhandler.defer_with_rpcrequest.called)
+        self.assertTrue(resource._eventhandler.callmethod.called)
+        self.assertTrue(resource._eventhandler.defer.called)
+        self.assertTrue(resource._eventhandler.getresponsecode.called)
+        self.assertTrue(resource._eventhandler.log.called)
 
     @TestResource
     def test_requestid0(self, request, resource):
@@ -303,6 +330,27 @@ class TestJSONRPCServer(unittest.TestCase):
 
     @_test_kwcall
     def test_kwcall_result(ignored, self, request, resource):
+        data = jsonrpc.jsonutil.decode(request.written[0])
+
+        self.assertEqual(data["result"], self.param)
+
+    @TestResourceCustomize
+    def _test_kwcall_customize(self, request, resource):
+        data = (
+            '{"jsonrpc": "2.0", "params": {"v": %s}, "method": "echo", "id": "%s"}'
+            % (jsonrpc.jsonutil.encode(self.param), self.id_)
+        )
+        request.content = io.StringIO(data)
+
+    @_test_kwcall_customize
+    def test_kwcall_id_customize(ignored, self, request, resource):
+        self.assertEqual(len(request.written), 1)
+        data = jsonrpc.jsonutil.decode(request.written[0])
+
+        self.assertEqual(data["id"], self.id_)
+
+    @_test_kwcall_customize
+    def test_kwcall_result_customize(ignored, self, request, resource):
         data = jsonrpc.jsonutil.decode(request.written[0])
 
         self.assertEqual(data["result"], self.param)

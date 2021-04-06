@@ -31,20 +31,26 @@
 #
 #
 import traceback
+from typing import Any, Callable, Dict, List, Protocol, Type, Union
 import jsonrpc.jsonutil
 from jsonrpc.utilities import public
 import jsonrpc.common
 
 # Twisted imports
 from twisted.web import server
+from twisted.web import iweb
 from twisted.internet import threads
 from twisted.internet import defer
 from twisted.web.resource import Resource
 
+import copy
+
 import abc
 
-import copy
-import collections
+
+class MethodRegistry(Protocol):
+    def get(self, method_name: str):
+        pass
 
 
 @public
@@ -54,7 +60,7 @@ class ServerEvents(object):
     DEBUG = False
 
     #: an object defining a 'get' method which contains the methods
-    methods = None
+    methods: MethodRegistry = {}  # type: ignore
 
     def __init__(self, server):
         #: A link to the JSON-RPC server instance
@@ -67,12 +73,7 @@ class ServerEvents(object):
 
         extra.update(rpcrequest.kwargs)
 
-        method, postprocess_result = (
-            self.findmethod(rpcrequest.method, rpcrequest.args, extra),
-            False,
-        )
-        if hasattr(method, "__iter__") and not isinstance(method, str):
-            method, postprocess_result = method
+        method = self.findmethod(rpcrequest.method, rpcrequest.args, extra)
 
         if self.DEBUG:
             # Debugging: raise AssertionError if type of method is invalid
@@ -86,10 +87,10 @@ class ServerEvents(object):
         result = method(*rpcrequest.args, **extra)
 
         # if the result needs to be adjusted/validated, do it
-        if postprocess_result:
-            result = self.methods.postprocess(
-                rpcrequest.method, result, rpcrequest.args, extra
-            )
+        # if postprocess_result:
+        #     result = self.methods.postprocess(
+        #         rpcrequest.method, result, rpcrequest.args, extra
+        #     )
 
         return result
 
@@ -110,7 +111,7 @@ class ServerEvents(object):
         """Override to implement custom logging"""
         pass
 
-    def processcontent(self, content, request):
+    def processcontent(self, content: str, request: server.Request):
         """Given the freshly decoded content of the request, return the content that should be used
 
         :returns: an object which implements the :py:class:`collections.MutableMapping` interface"""
@@ -167,35 +168,34 @@ class JSON_RPC(Resource):
     #: An instance of :py:class:`ServerEvents` which supplies callbacks to
     #: customize the operation of the server.  The proper way to initialize this
     #: is either to subclass and set it manually, or, preferably, to call :py:meth:`customize`.
-    eventhandler = ServerEvents
+    eventhandler: Type[ServerEvents] = ServerEvents
+    _eventhander: ServerEvents
 
-    def customize(self, eventhandler):
+    def customize(self, eventhandler: Type[ServerEvents]):
         """customize the behavior of the server"""
-        self.eventhandler = eventhandler(self)
+        self._eventhandler = eventhandler(self)
         return self
 
     def __init__(self, *args, **kwargs):
         self.customize(self.eventhandler)
         Resource.__init__(self, *args, **kwargs)
 
-    def render(self, request):
-        result = ""
+    def render(self, request: iweb.IRequest):
         request.content.seek(0, 0)
         try:
-            content = ""
             try:
                 content = request.content.read()
                 content = jsonrpc.jsonutil.decode(content)
             except ValueError as e:
-                self.eventhandler.log(None, request, True)
+                self._eventhandler.log(None, request, True)
                 raise jsonrpc.common.ParseError
 
-            content = self.eventhandler.processcontent(content, request)
+            content = self._eventhandler.processcontent(content, request)
 
             content = jsonrpc.common.Request.from_json(content)
 
             try:
-                if hasattr(content, "check"):
+                if isinstance(content, jsonrpc.common.Request):
                     content.check()
                 else:
                     for item in content:
@@ -203,7 +203,11 @@ class JSON_RPC(Resource):
 
             except jsonrpc.common.RPCError as e:
                 self._ebRender(
-                    e, request, content.id if hasattr(content, "id") else None
+                    e,
+                    request,
+                    content.id
+                    if isinstance(content, jsonrpc.common.Request)
+                    else ", ".join(map(lambda v: v.id or "None", content)),
                 )
 
             else:
@@ -212,7 +216,9 @@ class JSON_RPC(Resource):
                 d.addErrback(
                     self._ebRender,
                     request,
-                    content.id if hasattr(content, "id") else None,
+                    content.id
+                    if isinstance(content, jsonrpc.common.Request)
+                    else ", ".join(map(lambda v: v.id or "None", content)),
                 )
         except BaseException as e:
             self._ebRender(e, request, None)
@@ -220,10 +226,7 @@ class JSON_RPC(Resource):
         return server.NOT_DONE_YET
 
     def _action(self, request, contents, **kw):
-        result = []
-
-        islist = True if isinstance(contents, list) else False
-        if not islist:
+        if not isinstance(contents, list):
             contents = [contents]
 
         if contents == []:
@@ -231,16 +234,15 @@ class JSON_RPC(Resource):
 
         def callmethod(rpcrequest, request, add, **kwargs):
             add.update(kwargs)
-            result = self.eventhandler.callmethod(request, rpcrequest, **add)
+            result = self._eventhandler.callmethod(request, rpcrequest, **add)
             return result
 
         deferreds = []
         for rpcrequest in contents:
-            res = None
             add = copy.deepcopy(rpcrequest.extra)
             add.update(kw)
             deferreds.append(
-                self.eventhandler.defer_with_rpcrequest(
+                self._eventhandler.defer_with_rpcrequest(
                     callmethod, rpcrequest, request, add
                 )
             )
@@ -257,14 +259,14 @@ class JSON_RPC(Resource):
                         res = jsonrpc.common.Response(
                             id=rpcrequest.id, result=methodresult
                         )
-                        res = self.eventhandler.processrequest(res, request.args, **kw)
+                        res = self._eventhandler.processrequest(res, request.args, **kw)
                     else:
                         rpcrequest = methodresult.rpcrequest
                         try:
                             methodresult.raiseException()
                         except Exception as e:
                             res = self.render_error(e, rpcrequest.id)
-                            self.eventhandler.log(res, request, error=True)
+                            self._eventhandler.log(res, request, error=True)
 
                     if res.id is not None:
                         result.append(res)
@@ -282,11 +284,11 @@ class JSON_RPC(Resource):
         return deferreds
 
     def _cbRender(self, result, request):
-        @self.eventhandler.defer
-        def _inner(*args, **_):
-            code = self.eventhandler.getresponsecode(result)
+        @self._eventhandler.defer
+        def _inner(*_, **__):
+            code = self._eventhandler.getresponsecode(result)
             request.setResponseCode(code)
-            self.eventhandler.log(result, request, error=False)
+            self._eventhandler.log(result, request, error=False)
             if result is not None:
                 request.setHeader("content-type", "application/json")
                 result_ = jsonrpc.jsonutil.encode(result).encode("utf-8")
@@ -297,20 +299,20 @@ class JSON_RPC(Resource):
         return _inner
 
     def _ebRender(self, result, request, id, finish=True):
-        @self.eventhandler.defer
-        def _inner(*args, **_):
+        @self._eventhandler.defer
+        def _inner(*_, **__):
             err = None
             if not isinstance(result, BaseException):
                 try:
                     result.raiseException()
                 except BaseException as e:
                     err = e
-                    self.eventhandler.log(err, request, error=True)
+                    self._eventhandler.log(err, request, error=True)
             else:
                 err = result
             err = self.render_error(err, id)
 
-            code = self.eventhandler.getresponsecode(result)
+            code = self._eventhandler.getresponsecode(result)
             request.setResponseCode(code)
 
             request.setHeader("content-type", "application/json")
@@ -322,7 +324,8 @@ class JSON_RPC(Resource):
 
         return _inner
 
-    def render_error(self, e, id):
+    @staticmethod
+    def render_error(e, id):
         if isinstance(e, jsonrpc.common.RPCError):
             err = jsonrpc.common.Response(id=id, error=e)
         else:
