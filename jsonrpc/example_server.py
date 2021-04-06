@@ -1,4 +1,3 @@
-
 #
 #  Copyright (c) 2011 Edward Langley
 #  All rights reserved.
@@ -38,35 +37,40 @@ import traceback
 
 from jsonrpc.server import ServerEvents, JSON_RPC
 
+
 class ExampleServer(ServerEvents):
-	# inherited hooks
-	def log(self, responses, txrequest, error):
-		print(txrequest.code, end=' ')
-		if isinstance(responses, list):
-			for response in responses:
-				msg = self._get_msg(response)
-				print(txrequest, msg)
-		else:
-			msg = self._get_msg(responses)
-			print(txrequest, msg)
+    # inherited hooks
+    def log(self, responses, txrequest, error):
+        print(txrequest.code, end=" ")
+        if isinstance(responses, list):
+            for response in responses:
+                msg = self._get_msg(response)
+                print(txrequest, msg)
+        else:
+            msg = self._get_msg(responses)
+            print(txrequest, msg)
 
-	def findmethod(self, method, args=None, kwargs=None):
-		if method in self.methods:
-			return getattr(self, method)
-		else:
-			return None
+    def findmethod(self, method, args=None, kwargs=None):
+        if method in self.methods:
+            return getattr(self, method)
+        else:
+            return None
 
-	# helper methods
-	methods = set(['add', 'subtract'])
-	def _get_msg(self, response):
-		print('response', repr(response))
-		return ' '.join(str(x) for x in [response.id, response.result or response.error])
+    # helper methods
+    methods = set(["add", "subtract"])
 
-	def subtract(self, a, b):
-		return a-b
+    def _get_msg(self, response):
+        print("response", repr(response))
+        return " ".join(
+            str(x) for x in [response.id, response.result or response.error]
+        )
 
-	def add(self, a, b):
-		return a+b
+    def subtract(self, a, b):
+        return a - b
+
+    def add(self, a, b):
+        return a + b
+
 
 root = JSON_RPC().customize(ExampleServer)
 site = server.Site(root)
@@ -74,6 +78,6 @@ site = server.Site(root)
 
 # 8007 is the port you want to run under. Choose something >1024
 PORT = 8007
-print('Listening on port %d...' % PORT)
+print("Listening on port %d..." % PORT)
 reactor.listenTCP(PORT, site)
 reactor.run()

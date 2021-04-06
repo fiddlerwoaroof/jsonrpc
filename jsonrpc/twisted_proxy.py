@@ -46,65 +46,69 @@ from zope.interface import implements
 
 LOGGER = logging.getLogger(__name__)
 
+
 class StringProducer(object):
-	"""Feed a consumer from a string"""
-	implements(IBodyProducer)
+    """Feed a consumer from a string"""
 
-	def __init__(self, body):
-		self.body = body
-		self.length = len(body)
+    implements(IBodyProducer)
 
-	def startProducing(self, consumer):
-		consumer.write(self.body)
-		return succeed(None)
+    def __init__(self, body):
+        self.body = body
+        self.length = len(body)
 
-	def pauseProducing(self):
-		pass
+    def startProducing(self, consumer):
+        consumer.write(self.body)
+        return succeed(None)
 
-	def stopProducing(self):
-		pass
+    def pauseProducing(self):
+        pass
+
+    def stopProducing(self):
+        pass
 
 
 class ResponseConsumer(Protocol):
-	"""Read the request body and return a string"""
+    """Read the request body and return a string"""
 
-	body = ''
+    body = ""
 
-	def __init__(self, deferred):
-		self.deferred = deferred
+    def __init__(self, deferred):
+        self.deferred = deferred
 
-	def dataReceived(self, bytes):
-		self.body += bytes
+    def dataReceived(self, bytes):
+        self.body += bytes
 
-	def connectionLost(self, reason):
-		self.deferred.callback(self.body)
+    def connectionLost(self, reason):
+        self.deferred.callback(self.body)
 
 
 class JSONRPCProxy(jsonrpc.proxy.JSONRPCProxy):
+    def __call__(self, *args, **kwargs):
+        """Process the arguments and return a resonse deferred"""
+        url = self._get_url()
+        postdata = self._get_postdata(args, kwargs)
 
-	def __call__(self, *args, **kwargs):
-		"""Process the arguments and return a resonse deferred"""
-		url = self._get_url()
-		postdata = self._get_postdata(args, kwargs)
+        LOGGER.debug("Calling - %s - %s", url, postdata)
+        agent = Agent(reactor)
+        d = agent.request(
+            "POST",
+            url,
+            Headers({"Content-Type": ["application/json"]}),
+            StringProducer(postdata),
+        )
+        d.addCallback(self._get_response)
+        d.addCallback(self._process_response)
+        return d
 
-		LOGGER.debug('Calling - %s - %s', url, postdata)
-		agent = Agent(reactor)
-		d = agent.request('POST', url,
-								Headers({'Content-Type': ['application/json']}),
-								StringProducer(postdata))
-		d.addCallback(self._get_response)
-		d.addCallback(self._process_response)
-		return d
+    def _get_response(self, response):
+        LOGGER.debug("Got response")
+        d = Deferred()
+        response.deliverBody(ResponseConsumer(d))
+        return d
 
-	def _get_response(self, response):
-		LOGGER.debug('Got response')
-		d = Deferred()
-		response.deliverBody(ResponseConsumer(d))
-		return d
+    def _process_response(self, body):
+        LOGGER.debug("Processing response - %s", body)
+        resp = jsonrpc.common.Response.from_dict(jsonrpc.jsonutil.decode(body))
+        resp = self._eventhandler.proc_response(resp)
 
-	def _process_response(self, body):
-		LOGGER.debug('Processing response - %s', body)
-		resp = jsonrpc.common.Response.from_dict(jsonrpc.jsonutil.decode(body))
-		resp = self._eventhandler.proc_response(resp)
-
-		return resp.get_result()
+        return resp.get_result()
