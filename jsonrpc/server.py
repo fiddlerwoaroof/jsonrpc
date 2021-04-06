@@ -175,9 +175,12 @@ class JSON_RPC(Resource):
 		result = ''
 		request.content.seek(0, 0)
 		try:
+			content = ''
 			try:
-				content = jsonrpc.jsonutil.decode(request.content.read())
-			except ValueError:
+				content = request.content.read()
+				content = jsonrpc.jsonutil.decode(content)
+			except ValueError, e:
+				print('>>>', e)
 				self.eventhandler.log(None, request, True)
 				raise jsonrpc.common.ParseError
 
@@ -267,7 +270,7 @@ class JSON_RPC(Resource):
 			if result is not None:
 				request.setHeader("content-type", 'application/json')
 				result_ = jsonrpc.jsonutil.encode(result).encode('utf-8')
-				request.setHeader("content-length", len(result_))
+				request.setHeader("content-length", "%d" % len(result_))
 				request.write(result_)
 			request.finish()
 		return _inner
@@ -289,7 +292,7 @@ class JSON_RPC(Resource):
 
 			request.setHeader("content-type", 'application/json')
 			result_ = jsonrpc.jsonutil.encode(err).encode('utf-8')
-			request.setHeader("content-length", len(result_))
+			request.setHeader("content-length", str(len(result_)))
 			request.write(result_)
 			if finish: request.finish()
 		return _inner

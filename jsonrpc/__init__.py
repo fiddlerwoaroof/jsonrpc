@@ -30,10 +30,4 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #  
 #
-try: import json
-except ImportError:
-	import simplejson as json
-	import sys
-	sys.modules['json'] = json
-
-__version__ = "$Revision: 1.2 $".split(":")[1][:-1].strip()
+__version__ = "$Revision: 1.3 $".split(":")[1][:-1].strip()
