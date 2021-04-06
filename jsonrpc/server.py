@@ -226,7 +226,8 @@ class JSON_RPC(Resource):
         return server.NOT_DONE_YET
 
     def _action(self, request, contents, **kw):
-        if not isinstance(contents, list):
+        islist = True if isinstance(contents, list) else False
+        if not islist:
             contents = [contents]
 
         if contents == []:

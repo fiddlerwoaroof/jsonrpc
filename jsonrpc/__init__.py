@@ -30,4 +30,4 @@
 #  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 #
-__version__ = "$Revision: 1.3 $".split(":")[1][:-1].strip()
+__version__ = "3.0"
