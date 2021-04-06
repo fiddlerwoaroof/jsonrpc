@@ -50,11 +50,7 @@ __all__ = ['encode', 'decode']
 
 import functools
 
-try:
-	import json
-except ImportError:
-	import simplejson as json
-
+import json
 
 def dict_encode(obj):
 	items = getattr(obj, 'iteritems', obj.items)
