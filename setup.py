@@ -1,7 +1,7 @@
 from distutils.core import setup
 
-VERSION = "3.0"
-URLBASE = "https://github.com/NCMI/jsonrpc"
+VERSION = "3.0.1"
+URLBASE = "https://github.com/fiddlerwoaroof/jsonrpc"
 URLMAP = {
 	"daily": "tarball/master",
 	"0.99a01": "tarball/0.99a",
@@ -33,8 +33,7 @@ if __name__ == "__main__":
 			'Intended Audience :: Developers',
 			'License :: OSI Approved :: BSD License',
 			'Operating System :: OS Independent',
-			'Programming Language :: Python :: 2.6',
-			'Programming Language :: Python :: 2.7',
+			'Programming Language :: Python :: 3.8',
 			'Topic :: Software Development :: Libraries :: Python Modules',
 		]
 		)

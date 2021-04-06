@@ -1,4 +1,4 @@
-A JSON-RPC 2.0 implementation for Python (Python 3 not supported yet)
+A JSON-RPC 2.0 implementation for Python (Python 3 now supported!)
 
 
 ## Getting Started
@@ -14,9 +14,9 @@ A JSON-RPC 2.0 implementation for Python (Python 3 not supported yet)
     Listening on port 8007...
 
 ### Start the Client:
-  
+
   Python 2.7: `python -m jsonrpc <host name>`
-  
+
   Python 2.6: `python -m jsonrpc.__main__ <host name>`
 
 
@@ -45,8 +45,8 @@ A JSON-RPC 2.0 implementation for Python (Python 3 not supported yet)
 
     # Exceptions in batch calls
     >>> server.batch_call( dict(add=( (1,2), {} ), subtract=( (3,'2'), {} )) )
-    [(3, None), (None, {u'message': u"unsupported operand type(s) for -: 'int' 
-      and 'unicode'", u'code': 0, u'data': [u"unsupported operand type(s) for -: 
+    [(3, None), (None, {u'message': u"unsupported operand type(s) for -: 'int'
+      and 'unicode'", u'code': 0, u'data': [u"unsupported operand type(s) for -:
       'int' and 'unicode'"]})]
 
 
