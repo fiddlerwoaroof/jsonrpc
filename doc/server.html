@@ -1,0 +1,251 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>JSON-RPC Server &#8212; JSON-RPC 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="JSON-RPC Proxy" href="proxy.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="proxy.html" title="JSON-RPC Proxy"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">JSON-RPC 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">JSON-RPC Server</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-jsonrpc.server">
+<span id="json-rpc-server"></span><h1>JSON-RPC Server<a class="headerlink" href="#module-jsonrpc.server" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="jsonrpc.server.JSON_RPC">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">jsonrpc.server.</span></code><code class="sig-name descname"><span class="pre">JSON_RPC</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#JSON_RPC"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.JSON_RPC" title="Permalink to this definition">¶</a></dt>
+<dd><p>This class implements a JSON-RPC 2.0 server as a Twisted Resource</p>
+<p>Initialize.</p>
+<dl class="py method">
+<dt id="jsonrpc.server.JSON_RPC.customize">
+<code class="sig-name descname"><span class="pre">customize</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eventhandler</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#jsonrpc.server.ServerEvents" title="jsonrpc.server.ServerEvents"><span class="pre">jsonrpc.server.ServerEvents</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#JSON_RPC.customize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.JSON_RPC.customize" title="Permalink to this definition">¶</a></dt>
+<dd><p>customize the behavior of the server</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="jsonrpc.server.JSON_RPC.eventhandler">
+<code class="sig-name descname"><span class="pre">eventhandler</span></code><a class="headerlink" href="#jsonrpc.server.JSON_RPC.eventhandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>An instance of <a class="reference internal" href="#jsonrpc.server.ServerEvents" title="jsonrpc.server.ServerEvents"><code class="xref py py-class docutils literal notranslate"><span class="pre">ServerEvents</span></code></a> which supplies callbacks to
+customize the operation of the server.  The proper way to initialize this
+is either to subclass and set it manually, or, preferably, to call <a class="reference internal" href="#jsonrpc.server.JSON_RPC.customize" title="jsonrpc.server.JSON_RPC.customize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">customize()</span></code></a>.</p>
+<p>alias of <a class="reference internal" href="#jsonrpc.server.ServerEvents" title="jsonrpc.server.ServerEvents"><code class="xref py py-class docutils literal notranslate"><span class="pre">jsonrpc.server.ServerEvents</span></code></a></p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.server.JSON_RPC.render">
+<code class="sig-name descname"><span class="pre">render</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">request:</span> <span class="pre">&lt;InterfaceClass</span> <span class="pre">twisted.web.iweb.IRequest&gt;</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#JSON_RPC.render"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.JSON_RPC.render" title="Permalink to this definition">¶</a></dt>
+<dd><p>Render a given resource. See L{IResource}’s render method.</p>
+<p>I delegate to methods of self with the form ‘render_METHOD’
+where METHOD is the HTTP that was used to make the
+request. Examples: render_GET, render_HEAD, render_POST, and
+so on. Generally you should implement those methods instead of
+overriding this one.</p>
+<p>render_METHOD methods are expected to return a byte string which will be
+the rendered page, unless the return value is C{server.NOT_DONE_YET}, in
+which case it is this class’s responsibility to write the results using
+C{request.write(data)} and then call C{request.finish()}.</p>
+<p>Old code that overrides render() directly is likewise expected
+to return a byte string or NOT_DONE_YET.</p>
+<p>&#64;see: L{IResource.render}</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonrpc.server.ServerEvents">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">jsonrpc.server.</span></code><code class="sig-name descname"><span class="pre">ServerEvents</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">server</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subclass this and pass to <a class="reference internal" href="#jsonrpc.server.JSON_RPC.customize" title="jsonrpc.server.JSON_RPC.customize"><code class="xref py py-meth docutils literal notranslate"><span class="pre">JSON_RPC.customize()</span></code></a> to customize the JSON-RPC server</p>
+<dl class="py method">
+<dt id="jsonrpc.server.ServerEvents.callmethod">
+<code class="sig-name descname"><span class="pre">callmethod</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">txrequest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rpcrequest</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">extra</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents.callmethod"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents.callmethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the method and call it with the specified args</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the result of the method</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.server.ServerEvents.defer">
+<code class="sig-name descname"><span class="pre">defer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents.defer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents.defer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defer to thread. Override this method if you are using a different ThreadPool, or if you want to return immediately.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">twisted.internet.defer.Deferred</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.server.ServerEvents.findmethod">
+<code class="sig-name descname"><span class="pre">findmethod</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents.findmethod"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents.findmethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the callable associated with the method name</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>a callable or None if the method is not found</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.server.ServerEvents.getresponsecode">
+<code class="sig-name descname"><span class="pre">getresponsecode</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents.getresponsecode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents.getresponsecode" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take the result, and return an appropriate HTTP response code, returns 200 by default</p>
+<p>NOTE: if an error code is returned, the client error messages will be much less helpful!</p>
+<p>for example</p>
+<blockquote>
+<div><dl>
+<dt>def getresponsecode(self, result):</dt><dd><p>code = 200
+if not isinstance(result, list):</p>
+<blockquote>
+<div><dl class="simple">
+<dt>if result is not None and result.error is not None:</dt><dd><p>code = result.error.code or 500</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>return code</p>
+</dd>
+</dl>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/2.7/library/functions.html#int" title="(in Python v2.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.server.ServerEvents.log">
+<code class="sig-name descname"><span class="pre">log</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">txrequest</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents.log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents.log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override to implement custom logging</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="jsonrpc.server.ServerEvents.methods">
+<code class="sig-name descname"><span class="pre">methods</span></code><em class="property"><span class="pre">:</span> <span class="pre">jsonrpc.server.MethodRegistry</span></em><em class="property"> <span class="pre">=</span> <span class="pre">{}</span></em><a class="headerlink" href="#jsonrpc.server.ServerEvents.methods" title="Permalink to this definition">¶</a></dt>
+<dd><p>an object defining a ‘get’ method which contains the methods</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.server.ServerEvents.processcontent">
+<code class="sig-name descname"><span class="pre">processcontent</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">twisted.web.server.Request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents.processcontent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents.processcontent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given the freshly decoded content of the request, return the content that should be used</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>an object which implements the <a class="reference external" href="https://docs.python.org/2.7/library/collections.html#collections.MutableMapping" title="(in Python v2.7)"><code class="xref py py-class docutils literal notranslate"><span class="pre">collections.MutableMapping</span></code></a> interface</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.server.ServerEvents.processrequest">
+<code class="sig-name descname"><span class="pre">processrequest</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/server.html#ServerEvents.processrequest"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.server.ServerEvents.processrequest" title="Permalink to this definition">¶</a></dt>
+<dd><p>Override to implement custom handling of the method result and request</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt id="jsonrpc.server.ServerEvents.server">
+<code class="sig-name descname"><span class="pre">server</span></code><a class="headerlink" href="#jsonrpc.server.ServerEvents.server" title="Permalink to this definition">¶</a></dt>
+<dd><p>A link to the JSON-RPC server instance</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="getting_started.html"
+                        title="previous chapter">Getting Started</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="proxy.html"
+                        title="next chapter">JSON-RPC Proxy</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/server.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="proxy.html" title="JSON-RPC Proxy"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="getting_started.html" title="Getting Started"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">JSON-RPC 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">JSON-RPC Server</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2011, Edward Langley.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,419 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>jsonrpc.server &#8212; JSON-RPC 1.0 documentation</title>
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/jquery.js"></script>
+    <script src="../../_static/underscore.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">JSON-RPC 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">jsonrpc.server</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for jsonrpc.server</h1><div class="highlight"><pre>
+<span></span><span class="c1">#</span>
+<span class="c1">#  Copyright (c) 2011 Edward Langley</span>
+<span class="c1">#  All rights reserved.</span>
+<span class="c1">#</span>
+<span class="c1">#  Redistribution and use in source and binary forms, with or without</span>
+<span class="c1">#  modification, are permitted provided that the following conditions</span>
+<span class="c1">#  are met:</span>
+<span class="c1">#</span>
+<span class="c1">#  Redistributions of source code must retain the above copyright notice,</span>
+<span class="c1">#  this list of conditions and the following disclaimer.</span>
+<span class="c1">#</span>
+<span class="c1">#  Redistributions in binary form must reproduce the above copyright</span>
+<span class="c1">#  notice, this list of conditions and the following disclaimer in the</span>
+<span class="c1">#  documentation and/or other materials provided with the distribution.</span>
+<span class="c1">#</span>
+<span class="c1">#  Neither the name of the project&#39;s author nor the names of its</span>
+<span class="c1">#  contributors may be used to endorse or promote products derived from</span>
+<span class="c1">#  this software without specific prior written permission.</span>
+<span class="c1">#</span>
+<span class="c1">#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS</span>
+<span class="c1">#  &quot;AS IS&quot; AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT</span>
+<span class="c1">#  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS</span>
+<span class="c1">#  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT</span>
+<span class="c1">#  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,</span>
+<span class="c1">#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED</span>
+<span class="c1">#  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR</span>
+<span class="c1">#  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF</span>
+<span class="c1">#  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING</span>
+<span class="c1">#  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS</span>
+<span class="c1">#  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Protocol</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">import</span> <span class="nn">jsonrpc.jsonutil</span>
+<span class="kn">from</span> <span class="nn">jsonrpc.utilities</span> <span class="kn">import</span> <span class="n">public</span>
+<span class="kn">import</span> <span class="nn">jsonrpc.common</span>
+
+<span class="c1"># Twisted imports</span>
+<span class="kn">from</span> <span class="nn">twisted.web</span> <span class="kn">import</span> <span class="n">server</span>
+<span class="kn">from</span> <span class="nn">twisted.web</span> <span class="kn">import</span> <span class="n">iweb</span>
+<span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">threads</span>
+<span class="kn">from</span> <span class="nn">twisted.internet</span> <span class="kn">import</span> <span class="n">defer</span>
+<span class="kn">from</span> <span class="nn">twisted.web.resource</span> <span class="kn">import</span> <span class="n">Resource</span>
+
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<span class="kn">import</span> <span class="nn">abc</span>
+
+
+<span class="k">class</span> <span class="nc">MethodRegistry</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="ServerEvents"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents">[docs]</a><span class="nd">@public</span>
+<span class="k">class</span> <span class="nc">ServerEvents</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Subclass this and pass to :py:meth:`JSON_RPC.customize` to customize the JSON-RPC server&quot;&quot;&quot;</span>
+
+    <span class="n">DEBUG</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1">#: an object defining a &#39;get&#39; method which contains the methods</span>
+    <span class="n">methods</span><span class="p">:</span> <span class="n">MethodRegistry</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># type: ignore</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">server</span><span class="p">):</span>
+        <span class="c1">#: A link to the JSON-RPC server instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">server</span> <span class="o">=</span> <span class="n">server</span>
+
+<div class="viewcode-block" id="ServerEvents.callmethod"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents.callmethod">[docs]</a>    <span class="k">def</span> <span class="nf">callmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">txrequest</span><span class="p">,</span> <span class="n">rpcrequest</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find the method and call it with the specified args</span>
+
+<span class="sd">        :returns: the result of the method&quot;&quot;&quot;</span>
+
+        <span class="n">extra</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rpcrequest</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">findmethod</span><span class="p">(</span><span class="n">rpcrequest</span><span class="o">.</span><span class="n">method</span><span class="p">,</span> <span class="n">rpcrequest</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="n">extra</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+            <span class="c1"># Debugging: raise AssertionError if type of method is invalid</span>
+            <span class="k">assert</span> <span class="n">method</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">callable</span><span class="p">(</span>
+                <span class="n">method</span>
+            <span class="p">),</span> <span class="s2">&quot;the returned method is not callable&quot;</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">callable</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">MethodNotFound</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">rpcrequest</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">)</span>
+
+        <span class="c1"># if the result needs to be adjusted/validated, do it</span>
+        <span class="c1"># if postprocess_result:</span>
+        <span class="c1">#     result = self.methods.postprocess(</span>
+        <span class="c1">#         rpcrequest.method, result, rpcrequest.args, extra</span>
+        <span class="c1">#     )</span>
+
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="ServerEvents.findmethod"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents.findmethod">[docs]</a>    <span class="k">def</span> <span class="nf">findmethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the callable associated with the method name</span>
+
+<span class="sd">        :returns: a callable or None if the method is not found&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">methods</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">method_name</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+
+<div class="viewcode-block" id="ServerEvents.processrequest"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents.processrequest">[docs]</a>    <span class="k">def</span> <span class="nf">processrequest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override to implement custom handling of the method result and request&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+
+<div class="viewcode-block" id="ServerEvents.log"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents.log">[docs]</a>    <span class="k">def</span> <span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">,</span> <span class="n">txrequest</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Override to implement custom logging&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="ServerEvents.processcontent"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents.processcontent">[docs]</a>    <span class="k">def</span> <span class="nf">processcontent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">server</span><span class="o">.</span><span class="n">Request</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Given the freshly decoded content of the request, return the content that should be used</span>
+
+<span class="sd">        :returns: an object which implements the :py:class:`collections.MutableMapping` interface&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">content</span></div>
+
+<div class="viewcode-block" id="ServerEvents.getresponsecode"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents.getresponsecode">[docs]</a>    <span class="k">def</span> <span class="nf">getresponsecode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Take the result, and return an appropriate HTTP response code, returns 200 by default</span>
+
+<span class="sd">        NOTE: if an error code is returned, the client error messages will be much less helpful!</span>
+
+<span class="sd">        for example</span>
+
+<span class="sd">                def getresponsecode(self, result):</span>
+<span class="sd">                        code = 200</span>
+<span class="sd">                        if not isinstance(result, list):</span>
+<span class="sd">                                if result is not None and result.error is not None:</span>
+<span class="sd">                                        code = result.error.code or 500</span>
+<span class="sd">                        return code</span>
+
+
+<span class="sd">        :returns: :py:class:`int`&quot;&quot;&quot;</span>
+        <span class="c1"># returns 200 so that the python client can see something useful</span>
+        <span class="k">return</span> <span class="mi">200</span></div>
+
+<div class="viewcode-block" id="ServerEvents.defer"><a class="viewcode-back" href="../../server.html#jsonrpc.server.ServerEvents.defer">[docs]</a>    <span class="k">def</span> <span class="nf">defer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Defer to thread. Override this method if you are using a different ThreadPool, or if you want to return immediately.</span>
+
+<span class="sd">        :returns: :py:class:`twisted.internet.defer.Deferred`&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">threads</span><span class="o">.</span><span class="n">deferToThread</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">defer_with_rpcrequest</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">rpcrequest</span><span class="p">,</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defer</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">rpcrequest</span><span class="p">,</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+
+        <span class="nd">@d</span><span class="o">.</span><span class="n">addCallback</span>
+        <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">result</span><span class="p">,</span> <span class="n">rpcrequest</span>
+
+        <span class="nd">@d</span><span class="o">.</span><span class="n">addErrback</span>
+        <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">rpcrequest</span> <span class="o">=</span> <span class="n">rpcrequest</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">return</span> <span class="n">d</span></div>
+
+
+<span class="c1">## Base class providing a JSON-RPC 2.0 implementation with 2 customizable hooks</span>
+<div class="viewcode-block" id="JSON_RPC"><a class="viewcode-back" href="../../server.html#jsonrpc.server.JSON_RPC">[docs]</a><span class="nd">@public</span>
+<span class="k">class</span> <span class="nc">JSON_RPC</span><span class="p">(</span><span class="n">Resource</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;This class implements a JSON-RPC 2.0 server as a Twisted Resource&quot;&quot;&quot;</span>
+
+    <span class="n">isLeaf</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1">### NOTE: these comments are used by Sphinx as documentation.</span>
+    <span class="c1">#: An instance of :py:class:`ServerEvents` which supplies callbacks to</span>
+    <span class="c1">#: customize the operation of the server.  The proper way to initialize this</span>
+    <span class="c1">#: is either to subclass and set it manually, or, preferably, to call :py:meth:`customize`.</span>
+    <span class="n">eventhandler</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ServerEvents</span><span class="p">]</span> <span class="o">=</span> <span class="n">ServerEvents</span>
+    <span class="n">_eventhander</span><span class="p">:</span> <span class="n">ServerEvents</span>
+
+<div class="viewcode-block" id="JSON_RPC.customize"><a class="viewcode-back" href="../../server.html#jsonrpc.server.JSON_RPC.customize">[docs]</a>    <span class="k">def</span> <span class="nf">customize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eventhandler</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">ServerEvents</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;customize the behavior of the server&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span> <span class="o">=</span> <span class="n">eventhandler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">customize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">eventhandler</span><span class="p">)</span>
+        <span class="n">Resource</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="JSON_RPC.render"><a class="viewcode-back" href="../../server.html#jsonrpc.server.JSON_RPC.render">[docs]</a>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">:</span> <span class="n">iweb</span><span class="o">.</span><span class="n">IRequest</span><span class="p">):</span>
+        <span class="n">request</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">content</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">jsonutil</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">ParseError</span>
+
+            <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">processcontent</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+
+            <span class="n">content</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Request</span><span class="o">.</span><span class="n">from_json</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Request</span><span class="p">):</span>
+                    <span class="n">content</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                        <span class="n">item</span><span class="o">.</span><span class="n">check</span><span class="p">()</span>
+
+            <span class="k">except</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">RPCError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ebRender</span><span class="p">(</span>
+                    <span class="n">e</span><span class="p">,</span>
+                    <span class="n">request</span><span class="p">,</span>
+                    <span class="n">content</span><span class="o">.</span><span class="n">id</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">id</span> <span class="ow">or</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)),</span>
+                <span class="p">)</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_action</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">addCallback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cbRender</span><span class="p">,</span> <span class="n">request</span><span class="p">)</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">addErrback</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_ebRender</span><span class="p">,</span>
+                    <span class="n">request</span><span class="p">,</span>
+                    <span class="n">content</span><span class="o">.</span><span class="n">id</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Request</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">id</span> <span class="ow">or</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)),</span>
+                <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ebRender</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">server</span><span class="o">.</span><span class="n">NOT_DONE_YET</span></div>
+
+    <span class="k">def</span> <span class="nf">_action</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">contents</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+        <span class="n">islist</span> <span class="o">=</span> <span class="kc">True</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">contents</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">islist</span><span class="p">:</span>
+            <span class="n">contents</span> <span class="o">=</span> <span class="p">[</span><span class="n">contents</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">contents</span> <span class="o">==</span> <span class="p">[]:</span>
+            <span class="k">raise</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">InvalidRequest</span>
+
+        <span class="k">def</span> <span class="nf">callmethod</span><span class="p">(</span><span class="n">rpcrequest</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">add</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="n">add</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">callmethod</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">rpcrequest</span><span class="p">,</span> <span class="o">**</span><span class="n">add</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="n">deferreds</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">rpcrequest</span> <span class="ow">in</span> <span class="n">contents</span><span class="p">:</span>
+            <span class="n">add</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">rpcrequest</span><span class="o">.</span><span class="n">extra</span><span class="p">)</span>
+            <span class="n">add</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kw</span><span class="p">)</span>
+            <span class="n">deferreds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">defer_with_rpcrequest</span><span class="p">(</span>
+                    <span class="n">callmethod</span><span class="p">,</span> <span class="n">rpcrequest</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">add</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="n">deferreds</span> <span class="o">=</span> <span class="n">defer</span><span class="o">.</span><span class="n">DeferredList</span><span class="p">(</span><span class="n">deferreds</span><span class="p">,</span> <span class="n">consumeErrors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="nd">@deferreds</span><span class="o">.</span><span class="n">addCallback</span>
+        <span class="k">def</span> <span class="nf">helper</span><span class="p">(</span><span class="n">deferredresults</span><span class="p">):</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">success</span><span class="p">,</span> <span class="n">methodresult</span> <span class="ow">in</span> <span class="n">deferredresults</span><span class="p">:</span>
+                    <span class="n">res</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                        <span class="n">methodresult</span><span class="p">,</span> <span class="n">rpcrequest</span> <span class="o">=</span> <span class="n">methodresult</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span>
+                            <span class="nb">id</span><span class="o">=</span><span class="n">rpcrequest</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">methodresult</span>
+                        <span class="p">)</span>
+                        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">processrequest</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">request</span><span class="o">.</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">rpcrequest</span> <span class="o">=</span> <span class="n">methodresult</span><span class="o">.</span><span class="n">rpcrequest</span>
+                        <span class="k">try</span><span class="p">:</span>
+                            <span class="n">methodresult</span><span class="o">.</span><span class="n">raiseException</span><span class="p">()</span>
+                        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">render_error</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">rpcrequest</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">res</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+                <span class="k">raise</span>
+
+            <span class="k">if</span> <span class="n">result</span> <span class="o">!=</span> <span class="p">[]:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">islist</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">return</span> <span class="n">deferreds</span>
+
+    <span class="k">def</span> <span class="nf">_cbRender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">request</span><span class="p">):</span>
+        <span class="nd">@self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">defer</span>
+        <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">_</span><span class="p">,</span> <span class="o">**</span><span class="n">__</span><span class="p">):</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">getresponsecode</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">setResponseCode</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">setHeader</span><span class="p">(</span><span class="s2">&quot;content-type&quot;</span><span class="p">,</span> <span class="s2">&quot;application/json&quot;</span><span class="p">)</span>
+                <span class="n">result_</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">jsonutil</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">result</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">setHeader</span><span class="p">(</span><span class="s2">&quot;content-length&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_</span><span class="p">))</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">result_</span><span class="p">)</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">_inner</span>
+
+    <span class="k">def</span> <span class="nf">_ebRender</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">finish</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="nd">@self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">defer</span>
+        <span class="k">def</span> <span class="nf">_inner</span><span class="p">(</span><span class="o">*</span><span class="n">_</span><span class="p">,</span> <span class="o">**</span><span class="n">__</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="ne">BaseException</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">result</span><span class="o">.</span><span class="n">raiseException</span><span class="p">()</span>
+                <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                    <span class="n">err</span> <span class="o">=</span> <span class="n">e</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="n">request</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">err</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">render_error</span><span class="p">(</span><span class="n">err</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+
+            <span class="n">code</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eventhandler</span><span class="o">.</span><span class="n">getresponsecode</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">setResponseCode</span><span class="p">(</span><span class="n">code</span><span class="p">)</span>
+
+            <span class="n">request</span><span class="o">.</span><span class="n">setHeader</span><span class="p">(</span><span class="s2">&quot;content-type&quot;</span><span class="p">,</span> <span class="s2">&quot;application/json&quot;</span><span class="p">)</span>
+            <span class="n">result_</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">jsonutil</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">err</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">setHeader</span><span class="p">(</span><span class="s2">&quot;content-length&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">result_</span><span class="p">)))</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">result_</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">finish</span><span class="p">:</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">finish</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">_inner</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">render_error</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="nb">id</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">RPCError</span><span class="p">):</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">err</span> <span class="o">=</span> <span class="n">jsonrpc</span><span class="o">.</span><span class="n">common</span><span class="o">.</span><span class="n">Response</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="nb">id</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">data</span><span class="o">=</span><span class="n">e</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">err</span></div>
+</pre></div>
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">JSON-RPC 1.0 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">jsonrpc.server</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2011, Edward Langley.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>

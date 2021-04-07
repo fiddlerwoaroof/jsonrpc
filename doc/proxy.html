@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>JSON-RPC Proxy &#8212; JSON-RPC 1.0 documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="jsonrpc.jsonutil" href="jsonutil.html" />
+    <link rel="prev" title="JSON-RPC Server" href="server.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="jsonutil.html" title="jsonrpc.jsonutil"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="server.html" title="JSON-RPC Server"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">JSON-RPC 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">JSON-RPC Proxy</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="module-jsonrpc.proxy">
+<span id="json-rpc-proxy"></span><h1>JSON-RPC Proxy<a class="headerlink" href="#module-jsonrpc.proxy" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="jsonrpc.proxy.JSONRPCProxy">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">jsonrpc.proxy.</span></code><code class="sig-name descname"><span class="pre">JSONRPCProxy</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'jsonrpc'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serviceName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/proxy.html#JSONRPCProxy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.proxy.JSONRPCProxy" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class implementing a JSON-RPC Proxy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>host</strong> (<a class="reference external" href="https://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The HTTP server hosting the JSON-RPC server</p></li>
+<li><p><strong>path</strong> (<a class="reference external" href="https://docs.python.org/2.7/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) – The path where the JSON-RPC server can be found</p></li>
+</ul>
+</dd>
+</dl>
+<p>There are two ways of instantiating this class:
+- JSONRPCProxy.from_url(url) – give the absolute url to the JSON-RPC server
+- JSONRPC(host, path) – break up the url into smaller parts</p>
+<dl class="py method">
+<dt id="jsonrpc.proxy.JSONRPCProxy.batch_call">
+<code class="sig-name descname"><span class="pre">batch_call</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">methods</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/proxy.html#JSONRPCProxy.batch_call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.proxy.JSONRPCProxy.batch_call" title="Permalink to this definition">¶</a></dt>
+<dd><p>call several methods at once, return a list of (result, error) pairs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>names</strong> – a dictionary { method: (args, kwargs) }</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>a list of pairs (result, error) where only one is not None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.proxy.JSONRPCProxy.call">
+<code class="sig-name descname"><span class="pre">call</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/proxy.html#JSONRPCProxy.call"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.proxy.JSONRPCProxy.call" title="Permalink to this definition">¶</a></dt>
+<dd><p>call a JSON-RPC method</p>
+<p>It’s better to use instance.&lt;methodname&gt;(*args, **kwargs),
+but this version might be useful occasionally</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.proxy.JSONRPCProxy.from_url">
+<em class="property"><span class="pre">classmethod</span> </em><code class="sig-name descname"><span class="pre">from_url</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctxid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serviceName</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/proxy.html#JSONRPCProxy.from_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.proxy.JSONRPCProxy.from_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a JSONRPCProxy from a URL</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="jsonrpc.proxy.ProxyEvents">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">jsonrpc.proxy.</span></code><code class="sig-name descname"><span class="pre">ProxyEvents</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proxy</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/proxy.html#ProxyEvents"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.proxy.ProxyEvents" title="Permalink to this definition">¶</a></dt>
+<dd><p>An event handler for JSONRPCProxy</p>
+<p>Allow a subclass to do its own initialization, gets any arguments leftover from __init__</p>
+<dl class="py attribute">
+<dt id="jsonrpc.proxy.ProxyEvents.IDGen">
+<code class="sig-name descname"><span class="pre">IDGen</span></code><em class="property"> <span class="pre">=</span> <span class="pre">'8d009dd813b2b54d1d9787bc659b0dbc62e536fb'</span></em><a class="headerlink" href="#jsonrpc.proxy.ProxyEvents.IDGen" title="Permalink to this definition">¶</a></dt>
+<dd><p>an instance of a class which defines a __get__ method, used to generate a request id</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.proxy.ProxyEvents.get_params">
+<code class="sig-name descname"><span class="pre">get_params</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/proxy.html#ProxyEvents.get_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.proxy.ProxyEvents.get_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>allow a subclass to modify the method’s arguments</p>
+<p>e.g. if an authentication token is necessary, the subclass can automatically insert it into every call</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="jsonrpc.proxy.ProxyEvents.proc_response">
+<code class="sig-name descname"><span class="pre">proc_response</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jsonrpc/proxy.html#ProxyEvents.proc_response"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#jsonrpc.proxy.ProxyEvents.proc_response" title="Permalink to this definition">¶</a></dt>
+<dd><p>allow a subclass to access the response data before it is returned to the user</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="server.html"
+                        title="previous chapter">JSON-RPC Server</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="jsonutil.html"
+                        title="next chapter">jsonrpc.jsonutil</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/proxy.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="jsonutil.html" title="jsonrpc.jsonutil"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="server.html" title="JSON-RPC Server"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">JSON-RPC 1.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">JSON-RPC Proxy</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2011, Edward Langley.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.5.3.
+    </div>
+  </body>
+</html>
